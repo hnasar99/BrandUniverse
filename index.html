@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brand Universe Arcade - Jugar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FDFBF8; /* Warm off-white */
+            color: #334155; /* Slate 700 */
+            overflow-x: hidden; /* Prevent horizontal scroll */
+        }
+        .container {
+            max-width: 1200px;
+        }
+        .btn-primary {
+            @apply px-6 py-3 rounded-full bg-teal-600 text-white font-semibold shadow-md hover:bg-teal-700 transition-colors duration-300;
+        }
+        .btn-secondary {
+            @apply px-6 py-3 rounded-full bg-slate-200 text-slate-800 font-semibold shadow-sm hover:bg-slate-300 transition-colors duration-300;
+        }
+        .logo-item {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            background-color: #fff;
+            border-radius: 50%;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: transform 0.1s ease-out, opacity 0.3s ease-out;
+            border: 2px solid #14B8A6;
+            color: #14B8A6;
+            text-align: center;
+            line-height: 1.2;
+            padding: 5px;
+            user-select: none;
+        }
+        .logo-item.eliminated {
+            opacity: 0;
+            transform: scale(0.5);
+            pointer-events: none;
+        }
+        .arcade-area {
+            position: relative;
+            width: 100%;
+            height: 500px; /* Fixed height for the arcade area */
+            background-color: #E0F2F7; /* Light blue background */
+            border-radius: 1rem;
+            overflow: hidden;
+            border: 2px dashed #9DDEDD;
+        }
+        .brand-universe-section {
+            background-color: #FDFBF8;
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        /* Custom Message Box Styles */
+        #custom-message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            z-index: 1000;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            display: none; /* Hidden by default */
+        }
+        #custom-message-box.show {
+            display: block;
+        }
+        #custom-message-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none; /* Hidden by default */
+        }
+        #custom-message-overlay.show {
+            display: block;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <h1 class="text-2xl font-bold text-slate-800">Brand Universe Arcade</h1>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+
+        <section class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-8" role="alert">
+            <strong class="font-bold">¡Importante!</strong>
+            <span class="block sm:inline">Esta es una simulación del juego. Los logotipos y nombres de marcas utilizados son solo para fines ilustrativos y de demostración. Para un lanzamiento comercial, se requeriría la autorización y licencia explícita de cada marca.</span>
+        </section>
+
+        <section id="welcome-section" class="text-center mb-16 md:mb-24">
+            <h2 class="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">¡Bienvenido al Brand Universe Arcade!</h2>
+            <p class="mt-4 max-w-3xl mx-auto text-lg text-slate-600">Sumérgete en un mundo de marcas, juega trivias y gana premios. ¡Elige cómo quieres empezar!</p>
+            <div class="mt-8 flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+                <button id="login-google-btn" class="btn-primary">Iniciar sesión con Google</button>
+                <button id="play-guest-btn" class="btn-secondary">Jugar como Invitado</button>
+            </div>
+            <p id="user-status" class="mt-6 text-slate-600 font-medium hidden">Estado: <span id="current-user"></span></p>
+        </section>
+
+        <section id="arcade-section" class="hidden mb-16 md:mb-24">
+            <h2 class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl text-center">Arcade de Logos Dinámicos</h2>
+            <p class="mt-4 max-w-3xl mx-auto text-lg text-slate-600 text-center">Haz clic en los logos que flotan para eliminarlos. El último logo que quede te llevará a su universo de marca.</p>
+            <div class="mt-8 arcade-area" id="game-area">
+                </div>
+            <div class="mt-8 text-center">
+                <button id="start-arcade-btn" class="btn-primary">Comenzar Arcade</button>
+            </div>
+        </section>
+
+        <section id="brand-universe-section" class="hidden brand-universe-section text-center mb-16 md:mb-24">
+            <h2 class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">¡Bienvenido al Universo de <span id="current-brand-name" class="text-teal-600"></span>!</h2>
+            <p class="mt-4 max-w-3xl mx-auto text-lg text-slate-600">Aquí podrás participar en actividades exclusivas de la marca y ganar recompensas.</p>
+            
+            <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="card p-6">
+                    <h3 class="text-xl font-semibold text-slate-800 mb-4">Trivia de Marca ✨</h3>
+                    <p class="text-slate-600 mb-6">Pon a prueba tus conocimientos sobre <span id="trivia-brand-name" class="font-semibold"></span> con preguntas generadas por IA.</p>
+                    <button id="start-trivia-btn" class="btn-primary w-full">Iniciar Trivia</button>
+                    <div id="trivia-content" class="mt-4 hidden text-left">
+                        <p id="trivia-loading" class="text-slate-500 hidden">Generando pregunta...</p>
+                        <p class="font-medium mb-2" id="trivia-question"></p>
+                        <div id="trivia-options" class="space-y-2"></div>
+                        <p id="trivia-feedback" class="mt-2 font-semibold"></p>
+                        <button id="next-trivia-btn" class="btn-secondary mt-4 hidden">Siguiente Pregunta</button>
+                        <p id="trivia-result" class="mt-4 font-bold text-lg hidden"></p>
+                    </div>
+                </div>
+                <div class="card p-6">
+                    <h3 class="text-xl font-semibold text-slate-800 mb-4">Ruleta de Recompensas ✨</h3>
+                    <p class="text-slate-600 mb-6">Gira la ruleta y descubre qué premio te espera de <span id="rewards-brand-name" class="font-semibold"></span>, con descripciones creativas.</p>
+                    <button id="spin-wheel-btn" class="btn-primary w-full">Girar Ruleta</button>
+                    <p id="wheel-loading" class="text-slate-500 mt-4 hidden">Generando descripción del premio...</p>
+                    <p id="wheel-result" class="mt-4 font-bold text-lg hidden text-teal-600"></p>
+                </div>
+            </div>
+            <div class="mt-12">
+                <button id="return-to-arcade-btn" class="btn-secondary">Volver al Arcade</button>
+            </div>
+        </section>
+
+        <section id="unity-game-placeholder" class="hidden text-center mb-16 md:mb-24">
+            <h2 class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Cargando el Juego de Unity...</h2>
+            <p class="mt-4 max-w-3xl mx-auto text-lg text-slate-600">Aquí es donde se incrustaría la compilación de Unity WebGL. Para esta demostración, estamos simulando la experiencia.</p>
+            <div class="mt-8 w-full h-96 bg-slate-200 rounded-lg flex items-center justify-center text-slate-500 text-xl font-semibold">
+                [Espacio para la compilación de Unity WebGL]
+            </div>
+            <p class="mt-4 text-sm text-slate-500">El juego real se cargaría aquí. Esta es una simulación de la interfaz.</p>
+        </section>
+
+    </main>
+    
+    <footer class="bg-slate-50 border-t border-slate-200 mt-16">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4 text-center text-sm text-slate-500">
+            <p>Simulación de la Interfaz "Brand Universe Arcade" - Desarrollado para demostración.</p>
+        </div>
+    </footer>
+
+    <div id="custom-message-overlay" class="hidden"></div>
+    <div id="custom-message-box" class="hidden">
+        <p id="custom-message-content" class="text-slate-700 mb-6"></p>
+        <button id="custom-message-ok-btn" class="btn-primary">OK</button>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const welcomeSection = document.getElementById('welcome-section');
+    const arcadeSection = document.getElementById('arcade-section');
+    const brandUniverseSection = document.getElementById('brand-universe-section');
+    const unityGamePlaceholder = document.getElementById('unity-game-placeholder');
+
+    const loginGoogleBtn = document.getElementById('login-google-btn');
+    const playGuestBtn = document.getElementById('play-guest-btn');
+    const userStatus = document.getElementById('user-status');
+    const currentUserSpan = document.getElementById('current-user');
+    const startArcadeBtn = document.getElementById('start-arcade-btn');
+    const gameArea = document.getElementById('game-area');
+
+    const currentBrandNameSpan = document.getElementById('current-brand-name');
+    const triviaBrandNameSpan = document.getElementById('trivia-brand-name');
+    const rewardsBrandNameSpan = document.getElementById('rewards-brand-name');
+    const startTriviaBtn = document.getElementById('start-trivia-btn');
+    const triviaContent = document.getElementById('trivia-content');
+    const triviaLoading = document.getElementById('trivia-loading');
+    const triviaQuestionElem = document.getElementById('trivia-question');
+    const triviaOptionsElem = document.getElementById('trivia-options');
+    const triviaFeedbackElem = document.getElementById('trivia-feedback');
+    const nextTriviaBtn = document.getElementById('next-trivia-btn');
+    const triviaResultElem = document.getElementById('trivia-result');
+    const spinWheelBtn = document.getElementById('spin-wheel-btn');
+    const wheelLoading = document.getElementById('wheel-loading');
+    const wheelResultElem = document.getElementById('wheel-result');
+    const returnToArcadeBtn = document.getElementById('return-to-arcade-btn');
+
+    // Custom Message Box Elements
+    const customMessageBox = document.getElementById('custom-message-box');
+    const customMessageOverlay = document.getElementById('custom-message-overlay');
+    const customMessageContent = document.getElementById('custom-message-content');
+    const customMessageOkBtn = document.getElementById('custom-message-ok-btn');
+
+    let userState = {
+        loggedIn: false,
+        username: '',
+        chosenBrand: null,
+        score: 0,
+        currentTriviaQuestionIndex: 0 // This will track the question generated by LLM
+    };
+
+    // Note: Trivia questions will now be generated by LLM, these are just examples.
+    const brands = [
+        { name: 'Coca-Cola', emojis: ['🥤', '🔴', '✨'], rewards: ['Bebida gratis', 'Puntos extra', 'Descuento exclusivo'] },
+        { name: 'Nike', emojis: ['👟', '✔️', '🏃'], rewards: ['Cupón de 10%', 'Puntos de fidelidad', 'Acceso anticipado'] },
+        { name: 'Apple', emojis: ['🍎', '💻', '📱'], rewards: ['Fondo de pantalla exclusivo', 'Puntos App Store', 'Soporte prioritario'] },
+        { name: 'McDonald\'s', emojis: ['🍟', '🍔', ' arches'], rewards: ['Cupón de McFlurry', 'Puntos de menú', 'Juguete de colección'] },
+        { name: 'Adidas', emojis: ['👟', ' stripes', '⚽'], rewards: ['Cupón de 15%', 'Puntos Adidas', 'Artículo promocional'] }
+    ];
+
+    let activeLogos = [];
+    let gameInterval = null;
+    let currentTriviaQuestion = null; // To store the LLM-generated question
+
+    // --- Custom Message Box Functions ---
+    function showMessage(message) {
+        customMessageContent.textContent = message;
+        customMessageBox.classList.add('show');
+        customMessageOverlay.classList.add('show');
+    }
+
+    function hideMessage() {
+        customMessageBox.classList.remove('show');
+        customMessageOverlay.classList.remove('show');
+    }
+
+    customMessageOkBtn.addEventListener('click', hideMessage);
+    customMessageOverlay.addEventListener('click', hideMessage); // Close on overlay click
+
+    // --- UI State Management ---
+    function showSection(sectionToShow) {
+        welcomeSection.classList.add('hidden');
+        arcadeSection.classList.add('hidden');
+        brandUniverseSection.classList.add('hidden');
+        unityGamePlaceholder.classList.add('hidden');
+
+        sectionToShow.classList.remove('hidden');
+    }
+
+    function updateLoginUI() {
+        if (userState.loggedIn) {
+            userStatus.classList.remove('hidden');
+            currentUserSpan.textContent = userState.username;
+            loginGoogleBtn.classList.add('hidden');
+            playGuestBtn.classList.add('hidden');
+            startArcadeBtn.classList.remove('hidden');
+            showSection(arcadeSection); // Automatically show arcade after login
+        } else {
+            userStatus.classList.add('hidden');
+            loginGoogleBtn.classList.remove('hidden');
+            playGuestBtn.classList.remove('hidden');
+            startArcadeBtn.classList.add('hidden');
+            showSection(welcomeSection);
+        }
+    }
+
+    // --- Login Logic ---
+    loginGoogleBtn.addEventListener('click', () => {
+        // Simulate Google OAuth flow
+        setTimeout(() => {
+            userState.loggedIn = true;
+            userState.username = 'Usuario de Google';
+            updateLoginUI();
+            showMessage("Simulación: ¡Has iniciado sesión con Google!");
+        }, 500);
+    });
+
+    playGuestBtn.addEventListener('click', () => {
+        // Simulate guest login
+        userState.loggedIn = true;
+        userState.username = 'Invitado';
+        updateLoginUI();
+        showMessage("Simulación: ¡Estás jugando como invitado!");
+    });
+
+    // --- Arcade Game Logic ---
+    function getRandomPosition(element) {
+        const gameAreaRect = gameArea.getBoundingClientRect();
+        const maxX = gameAreaRect.width - element.offsetWidth;
+        const maxY = gameAreaRect.height - element.offsetHeight;
+        return {
+            x: Math.random() * maxX,
+            y: Math.random() * maxY
+        };
+    }
+
+    function createLogoElement(brand) {
+        const logoDiv = document.createElement('div');
+        logoDiv.classList.add('logo-item');
+        logoDiv.dataset.brand = brand.name;
+        logoDiv.textContent = brand.name; // Initial text
+
+        const initialPos = getRandomPosition(logoDiv);
+        logoDiv.style.left = `${initialPos.x}px`;
+        logoDiv.style.top = `${initialPos.y}px`;
+
+        // Store movement properties
+        logoDiv.dx = (Math.random() - 0.5) * 4; // -2 to 2
+        logoDiv.dy = (Math.random() - 0.5) * 4; // -2 to 2
+
+        // Interval to change logo appearance
+        logoDiv.changeInterval = setInterval(() => {
+            const currentBrand = brands.find(b => b.name === logoDiv.dataset.brand);
+            if (currentBrand && currentBrand.emojis) {
+                const randomEmoji = currentBrand.emojis[Math.floor(Math.random() * currentBrand.emojis.length)];
+                logoDiv.textContent = `${currentBrand.name} ${randomEmoji}`;
+            } else {
+                logoDiv.textContent = brand.name; // Fallback
+            }
+        }, 1000 + Math.random() * 2000); // Change every 1-3 seconds
+
+        logoDiv.addEventListener('click', () => {
+            if (!logoDiv.classList.contains('eliminated')) {
+                logoDiv.classList.add('eliminated');
+                clearInterval(logoDiv.changeInterval); // Stop changing text
+                activeLogos = activeLogos.filter(logo => logo !== logoDiv);
+                checkWinCondition();
+            }
+        });
+        return logoDiv;
+    }
+
+    function startGame() {
+        if (gameInterval) clearInterval(gameInterval);
+        gameArea.innerHTML = ''; // Clear previous logos
+        activeLogos = [];
+
+        // Choose a subset of brands if there are too many for the screen
+        const brandsToUse = brands.slice(0, Math.min(brands.length, 5 + Math.floor(Math.random() * 3))); // 5 to 7 logos
+
+        brandsToUse.forEach(brand => {
+            const logo = createLogoElement(brand);
+            gameArea.appendChild(logo);
+            activeLogos.push(logo);
+        });
+
+        gameInterval = setInterval(updateArcade, 1000 / 60); // 60 FPS
+    }
+
+    function updateArcade() {
+        const gameAreaRect = gameArea.getBoundingClientRect();
+        activeLogos.forEach(logo => {
+            let newX = parseFloat(logo.style.left) + logo.dx;
+            let newY = parseFloat(logo.style.top) + logo.dy;
+
+            // Bounce off walls
+            if (newX < 0 || newX + logo.offsetWidth > gameAreaRect.width) {
+                logo.dx *= -1;
+                newX = Math.max(0, Math.min(newX, gameAreaRect.width - logo.offsetWidth)); // Clamp position
+            }
+            if (newY < 0 || newY + logo.offsetHeight > gameAreaRect.height) {
+                logo.dy *= -1;
+                newY = Math.max(0, Math.min(newY, gameAreaRect.height - logo.offsetHeight)); // Clamp position
+            }
+
+            logo.style.left = `${newX}px`;
+            logo.style.top = `${newY}px`;
+        });
+    }
+
+    function checkWinCondition() {
+        if (activeLogos.length === 1) {
+            clearInterval(gameInterval);
+            const winningBrandName = activeLogos[0].dataset.brand;
+            userState.chosenBrand = brands.find(b => b.name === winningBrandName);
+            setTimeout(() => {
+                enterBrandUniverse(winningBrandName);
+            }, 500); // Small delay for visual effect
+        } else if (activeLogos.length === 0 && gameInterval) {
+            // All eliminated, restart or show message
+            clearInterval(gameInterval);
+            showMessage("¡Todos los logos eliminados! Reiniciando el arcade.");
+            startGame();
+        }
+    }
+
+    startArcadeBtn.addEventListener('click', () => {
+        startGame();
+        startArcadeBtn.classList.add('hidden'); // Hide button after starting
+    });
+
+    // --- Brand Universe Logic ---
+    function enterBrandUniverse(brandName) {
+        currentBrandNameSpan.textContent = brandName;
+        triviaBrandNameSpan.textContent = brandName;
+        rewardsBrandNameSpan.textContent = brandName;
+        
+        // Reset trivia
+        userState.currentTriviaQuestionIndex = 0;
+        triviaContent.classList.add('hidden');
+        triviaResultElem.classList.add('hidden');
+        nextTriviaBtn.classList.add('hidden');
+        triviaFeedbackElem.textContent = '';
+        startTriviaBtn.classList.remove('hidden'); // Show start button again
+        spinWheelBtn.classList.remove('hidden');
+        wheelResultElem.classList.add('hidden');
+        wheelLoading.classList.add('hidden'); // Hide loading if visible
+
+        showSection(brandUniverseSection);
+        // In a real game, this would load the Unity scene for the brand.
+        // showSection(unityGamePlaceholder); // Would show Unity game
+    }
+
+    // --- Gemini API Call for Trivia ---
+    async function generateTriviaQuestion(brandName) {
+        triviaLoading.classList.remove('hidden');
+        triviaQuestionElem.textContent = '';
+        triviaOptionsElem.innerHTML = '';
+        triviaFeedbackElem.textContent = '';
+        nextTriviaBtn.classList.add('hidden');
+
+        let chatHistory = [];
+        const prompt = `Genera una pregunta de trivia sobre ${brandName} con 3 opciones de respuesta, una de las cuales sea correcta. La respuesta debe ser un JSON con el siguiente formato: { "pregunta": "...", "opciones": ["...", "...", "..."], "respuesta_correcta": "..." }`;
+        chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+        
+        const payload = {
+            contents: chatHistory,
+            generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: "OBJECT",
+                    properties: {
+                        "pregunta": { "type": "STRING" },
+                        "opciones": { "type": "ARRAY", "items": { "type": "STRING" } },
+                        "respuesta_correcta": { "type": "STRING" }
+                    },
+                    "propertyOrdering": ["pregunta", "opciones", "respuesta_correcta"]
+                }
+            }
+        };
+        const apiKey = ""; // Canvas will provide this at runtime
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            if (result.candidates && result.candidates.length > 0 &&
+                result.candidates[0].content && result.candidates[0].content.parts &&
+                result.candidates[0].content.parts.length > 0) {
+                const json = result.candidates[0].content.parts[0].text;
+                const parsedJson = JSON.parse(json);
+                return parsedJson;
+            } else {
+                console.error("Error: Estructura de respuesta inesperada del LLM para trivia.");
+                showMessage("Error al generar pregunta de trivia. Inténtalo de nuevo.");
+                return null;
+            }
+        } catch (error) {
+            console.error("Error al llamar a la API de Gemini para trivia:", error);
+            showMessage("Error de conexión al generar pregunta de trivia. Asegúrate de tener conexión.");
+            return null;
+        } finally {
+            triviaLoading.classList.add('hidden');
+        }
+    }
+
+    // Trivia Game Logic
+    startTriviaBtn.addEventListener('click', async () => {
+        triviaContent.classList.remove('hidden');
+        startTriviaBtn.classList.add('hidden');
+        userState.currentTriviaQuestionIndex = 0; // Reset for a new set of questions
+        userState.score = 0;
+        await displayTriviaQuestion(); // Await the first question
+    });
+
+    async function displayTriviaQuestion() {
+        triviaFeedbackElem.textContent = '';
+        triviaResultElem.classList.add('hidden');
+        nextTriviaBtn.classList.add('hidden');
+        triviaOptionsElem.innerHTML = '';
+
+        if (!userState.chosenBrand) {
+            triviaQuestionElem.textContent = 'No se ha seleccionado una marca.';
+            return;
+        }
+
+        // Generate a new question for each turn
+        currentTriviaQuestion = await generateTriviaQuestion(userState.chosenBrand.name);
+
+        if (currentTriviaQuestion) {
+            triviaQuestionElem.textContent = `Pregunta: ${currentTriviaQuestion.pregunta}`;
+            currentTriviaQuestion.opciones.forEach(option => {
+                const button = document.createElement('button');
+                button.classList.add('block', 'w-full', 'px-4', 'py-2', 'rounded-md', 'text-left', 'bg-slate-100', 'hover:bg-slate-200', 'transition-colors', 'duration-200', 'text-slate-800');
+                button.textContent = option;
+                button.addEventListener('click', () => selectTriviaAnswer(option, currentTriviaQuestion.respuesta_correcta));
+                triviaOptionsElem.appendChild(button);
+            });
+        } else {
+            triviaQuestionElem.textContent = 'No se pudo cargar la pregunta de trivia.';
+        }
+    }
+
+    function selectTriviaAnswer(selected, correct) {
+        Array.from(triviaOptionsElem.children).forEach(button => {
+            button.disabled = true; // Disable all options after selection
+            if (button.textContent === correct) {
+                button.classList.add('bg-green-200', 'text-green-800');
+            } else if (button.textContent === selected) {
+                button.classList.add('bg-red-200', 'text-red-800');
+            }
+        });
+
+        if (selected === correct) {
+            triviaFeedbackElem.textContent = '¡Correcto!';
+            triviaFeedbackElem.classList.remove('text-red-600');
+            triviaFeedbackElem.classList.add('text-green-600');
+            userState.score++;
+        } else {
+            triviaFeedbackElem.textContent = `Incorrecto. La respuesta correcta era: ${correct}`;
+            triviaFeedbackElem.classList.remove('text-green-600');
+            triviaFeedbackElem.classList.add('text-red-600');
+        }
+        nextTriviaBtn.classList.remove('hidden');
+    }
+
+    nextTriviaBtn.addEventListener('click', async () => {
+        // In this LLM-powered version, each click generates a new question.
+        // We can limit the number of questions per session if needed.
+        userState.currentTriviaQuestionIndex++; // Just for tracking how many questions asked
+        if (userState.currentTriviaQuestionIndex < 3) { // Example: Play 3 questions
+            await displayTriviaQuestion();
+        } else {
+            triviaQuestionElem.textContent = '¡Trivia completada!';
+            triviaOptionsElem.innerHTML = '';
+            triviaFeedbackElem.textContent = '';
+            nextTriviaBtn.classList.add('hidden');
+            triviaResultElem.textContent = `Tu puntuación final: ${userState.score} preguntas correctas.`;
+            triviaResultElem.classList.remove('hidden');
+        }
+    });
+
+    // --- Gemini API Call for Reward Description ---
+    async function generateRewardDescription(reward, brandName) {
+        wheelLoading.classList.remove('hidden');
+        wheelResultElem.classList.add('hidden');
+
+        let chatHistory = [];
+        const prompt = `Genera una descripción creativa y emocionante para el premio "${reward}" de la marca "${brandName}". Debe ser concisa y atractiva.`;
+        chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+        
+        const payload = { contents: chatHistory };
+        const apiKey = ""; // Canvas will provide this at runtime
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            if (result.candidates && result.candidates.length > 0 &&
+                result.candidates[0].content && result.candidates[0].content.parts &&
+                result.candidates[0].content.parts.length > 0) {
+                return result.candidates[0].content.parts[0].text;
+            } else {
+                console.error("Error: Estructura de respuesta inesperada del LLM para descripción de premio.");
+                return `¡Felicidades! Has ganado: ${reward}`; // Fallback
+            }
+        } catch (error) {
+            console.error("Error al llamar a la API de Gemini para descripción de premio:", error);
+            return `¡Felicidades! Has ganado: ${reward}`; // Fallback
+        } finally {
+            wheelLoading.classList.add('hidden');
+        }
+    }
+
+    // Rewards Wheel Logic
+    spinWheelBtn.addEventListener('click', async () => {
+        if (!userState.chosenBrand || !userState.chosenBrand.rewards || userState.chosenBrand.rewards.length === 0) {
+            wheelResultElem.textContent = 'No hay recompensas disponibles para esta marca.';
+            wheelResultElem.classList.remove('hidden');
+            return;
+        }
+        spinWheelBtn.disabled = true; // Prevent multiple spins
+        wheelResultElem.classList.add('hidden');
+        wheelLoading.classList.remove('hidden');
+
+        // Simulate spinning
+        setTimeout(async () => {
+            const randomReward = userState.chosenBrand.rewards[Math.floor(Math.random() * userState.chosenBrand.rewards.length)];
+            const rewardDescription = await generateRewardDescription(randomReward, userState.chosenBrand.name);
+            wheelResultElem.textContent = rewardDescription;
+            wheelResultElem.classList.remove('hidden');
+            spinWheelBtn.disabled = false; // Enable spinning again
+            wheelLoading.classList.add('hidden');
+        }, 1500); // Simulate spin duration
+    });
+
+    returnToArcadeBtn.addEventListener('click', () => {
+        showSection(arcadeSection);
+        startArcadeBtn.classList.remove('hidden'); // Show start button again
+        gameArea.innerHTML = ''; // Clear logos
+        activeLogos = [];
+        if (gameInterval) clearInterval(gameInterval);
+    });
+
+    // Initial UI update
+    updateLoginUI();
+});
+</script>
+
+</body>
+</html>
